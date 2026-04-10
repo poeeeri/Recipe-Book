@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Книга рецептов</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Тестируемое веб-приложение</p>
+          <h1>Книга рецептов</h1>
+          <p class="hero-copy">
+            Управление продуктами и блюдами с автоматическим расчётом КБЖУ, фильтрами, валидацией и API.
+          </p>
+        </div>
+        <div class="hero-badge">
+          <span>REST API</span>
+          <span>PostgreSQL / файл</span>
+          <span>Автотесты</span>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Продукты</h2>
+            <button id="reset-product-form" class="ghost-button" type="button">Очистить форму</button>
+          </div>
+
+          <form id="product-form" class="entity-form">
+            <input type="hidden" name="id" />
+            <label>
+              <span>Название</span>
+              <input name="name" minlength="2" required />
+            </label>
+            <label>
+              <span>Фотографии</span>
+              <input id="product-photos-input" type="file" accept="image/*" multiple />
+            </label>
+            <div id="product-photos-preview" class="chips"></div>
+            <div class="grid-2">
+              <label>
+                <span>Калорийность, ккал / 100 г</span>
+                <input type="number" name="calories" min="0" step="0.01" required />
+              </label>
+              <label>
+                <span>Категория</span>
+                <select name="category" required></select>
+              </label>
+            </div>
+            <div class="grid-3">
+              <label>
+                <span>Белки</span>
+                <input type="number" name="proteins" min="0" max="100" step="0.01" required />
+              </label>
+              <label>
+                <span>Жиры</span>
+                <input type="number" name="fats" min="0" max="100" step="0.01" required />
+              </label>
+              <label>
+                <span>Углеводы</span>
+                <input type="number" name="carbs" min="0" max="100" step="0.01" required />
+              </label>
+            </div>
+            <label>
+              <span>Состав</span>
+              <textarea name="composition"></textarea>
+            </label>
+            <label>
+              <span>Необходимость готовки</span>
+              <select name="cookingState" required></select>
+            </label>
+            <fieldset>
+              <legend>Флаги продукта</legend>
+              <div id="product-flags" class="chips"></div>
+            </fieldset>
+            <div class="actions">
+              <button type="submit">Сохранить продукт</button>
+            </div>
+          </form>
+
+          <div class="filters">
+            <input id="product-search" placeholder="Поиск по названию" />
+            <select id="product-filter-category"></select>
+            <select id="product-filter-cooking"></select>
+            <select id="product-sort">
+              <option value="">Без сортировки</option>
+              <option value="name">Название</option>
+              <option value="calories">Калорийность</option>
+              <option value="proteins">Белки</option>
+              <option value="fats">Жиры</option>
+              <option value="carbs">Углеводы</option>
+            </select>
+            <select id="product-order">
+              <option value="asc">По возрастанию</option>
+              <option value="desc">По убыванию</option>
+            </select>
+            <div id="product-filter-flags" class="chips compact"></div>
+          </div>
+
+          <div id="product-list" class="cards"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Блюда</h2>
+            <button id="reset-dish-form" class="ghost-button" type="button">Очистить форму</button>
+          </div>
+
+          <form id="dish-form" class="entity-form">
+            <input type="hidden" name="id" />
+            <label>
+              <span>Название</span>
+              <input name="name" minlength="2" required />
+            </label>
+            <label>
+              <span>Фотографии</span>
+              <input id="dish-photos-input" type="file" accept="image/*" multiple />
+            </label>
+            <div id="dish-photos-preview" class="chips"></div>
+            <div class="grid-2">
+              <label>
+                <span>Категория</span>
+                <select name="category" required></select>
+              </label>
+              <label>
+                <span>Размер порции, г</span>
+                <input type="number" name="portionSize" min="0.01" step="0.01" required />
+              </label>
+            </div>
+
+            <section class="subpanel">
+              <div class="subpanel-header">
+                <h3>Состав блюда</h3>
+                <button id="add-dish-item" class="ghost-button" type="button">Добавить продукт</button>
+              </div>
+              <div id="dish-items" class="dish-items"></div>
+            </section>
+
+            <div class="draft-box" id="dish-draft-box">
+              <strong>Черновой расчёт КБЖУ</strong>
+              <p id="dish-draft-text">Добавьте продукты в состав блюда.</p>
+            </div>
+
+            <div class="grid-4">
+              <label>
+                <span>Калорийность, ккал / порция</span>
+                <input type="number" name="calories" min="0" step="0.01" required />
+              </label>
+              <label>
+                <span>Белки</span>
+                <input type="number" name="proteins" min="0" step="0.01" required />
+              </label>
+              <label>
+                <span>Жиры</span>
+                <input type="number" name="fats" min="0" step="0.01" required />
+              </label>
+              <label>
+                <span>Углеводы</span>
+                <input type="number" name="carbs" min="0" step="0.01" required />
+              </label>
+            </div>
+
+            <fieldset>
+              <legend>Флаги блюда</legend>
+              <div id="dish-flags" class="chips"></div>
+            </fieldset>
+            <div class="actions">
+              <button type="submit">Сохранить блюдо</button>
+            </div>
+          </form>
+
+          <div class="filters">
+            <input id="dish-search" placeholder="Поиск по названию" />
+            <select id="dish-filter-category"></select>
+            <div id="dish-filter-flags" class="chips compact"></div>
+          </div>
+
+          <div id="dish-list" class="cards"></div>
+        </section>
+      </main>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <template id="dish-item-template">
+      <div class="dish-item-row">
+        <select name="productId" required></select>
+        <input type="number" name="quantity" min="0.01" step="0.01" placeholder="г" required />
+        <button type="button" class="ghost-button remove-item">Удалить</button>
+      </div>
+    </template>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
