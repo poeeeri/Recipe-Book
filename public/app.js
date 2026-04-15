@@ -222,6 +222,14 @@ function calculateDraft(items) {
   );
 }
 
+function clearManualDishNutrition() {
+  delete dishForm.dataset.manualValues;
+}
+
+function hasManualDishNutrition() {
+  return dishForm.dataset.manualValues === "true";
+}
+
 function availableDishFlags(items) {
   if (!items.length) {
     return [];
@@ -241,7 +249,7 @@ function updateDishDraft() {
   const draft = calculateDraft(items);
   dishDraftText.textContent = `Калории: ${draft.calories.toFixed(2)}, Б: ${draft.proteins.toFixed(2)}, Ж: ${draft.fats.toFixed(2)}, У: ${draft.carbs.toFixed(2)}`;
 
-  if (!dishForm.dataset.manualValues) {
+  if (!hasManualDishNutrition()) {
     dishForm.calories.value = draft.calories.toFixed(2);
     dishForm.proteins.value = draft.proteins.toFixed(2);
     dishForm.fats.value = draft.fats.toFixed(2);
@@ -284,7 +292,7 @@ function resetProductForm() {
 function resetDishForm() {
   dishForm.reset();
   dishForm.id.value = "";
-  dishForm.dataset.manualValues = "";
+  clearManualDishNutrition();
   state.dishPhotos = [];
   renderPhotoPreview(dishPhotosPreview, state.dishPhotos, (index) => {
     state.dishPhotos.splice(index, 1);
