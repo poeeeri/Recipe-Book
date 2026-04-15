@@ -23,6 +23,8 @@ public static class RecipeBookApp
             options.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
         });
 
+        var usesEntityFramework = false;
+
         if (!string.IsNullOrWhiteSpace(databasePath))
         {
             builder.Services.AddSingleton<IRecipeStore>(new FileDatabaseStore(databasePath));
@@ -44,6 +46,7 @@ public static class RecipeBookApp
                 builder.Services.AddDbContext<RecipeBookDbContext>(options =>
                     options.UseNpgsql(connectionString, npgsql => npgsql.MigrationsAssembly(typeof(Program).Assembly.FullName)));
                 builder.Services.AddScoped<IRecipeStore, EfRecipeStore>();
+                usesEntityFramework = true;
             }
         }
 
@@ -76,7 +79,7 @@ public static class RecipeBookApp
             app.UseStaticFiles(new StaticFileOptions { FileProvider = provider });
         }
 
-        if (string.IsNullOrWhiteSpace(databasePath))
+        if (usesEntityFramework)
         {
             using var scope = app.Services.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<RecipeBookDbContext>();
