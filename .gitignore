@@ -14,7 +14,6 @@ README.md
 run-api.ps1
 run-tests.ps1
 run-unit-tests.ps1
-RecipeBook.Tests/
 RecipeBook.UnitTests/
 data/
 tests/
