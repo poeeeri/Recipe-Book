@@ -140,9 +140,9 @@ function renderPhotoPreview(container, photos, onRemove) {
 }
 
 function fillMeta() {
-  setSelectOptions(productForm.category, state.meta.productCategories);
-  setSelectOptions(productForm.cookingState, state.meta.productCookingStates);
-  setSelectOptions(dishForm.category, state.meta.dishCategories);
+  setSelectOptions(productForm.category, state.meta.productCategories, "Выберите категорию");
+  setSelectOptions(productForm.cookingState, state.meta.productCookingStates, "Выберите готовность");
+  setSelectOptions(dishForm.category, state.meta.dishCategories, "Выберите категорию");
   setSelectOptions(document.querySelector("#product-filter-category"), state.meta.productCategories, "Все категории");
   setSelectOptions(document.querySelector("#product-filter-cooking"), state.meta.productCookingStates, "Любая готовность");
   setSelectOptions(document.querySelector("#dish-filter-category"), state.meta.dishCategories, "Все категории");
