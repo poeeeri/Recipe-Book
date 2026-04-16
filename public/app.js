@@ -23,6 +23,10 @@ const productPhotosPreview = document.querySelector("#product-photos-preview");
 const dishPhotosPreview = document.querySelector("#dish-photos-preview");
 const productFlagsContainer = document.querySelector("#product-flags");
 const dishFlagsContainer = document.querySelector("#dish-flags");
+const detailsModal = document.querySelector("#details-modal");
+const detailsModalTitle = document.querySelector("#details-modal-title");
+const detailsModalBody = document.querySelector("#details-modal-body");
+const closeDetailsModalButton = document.querySelector("#close-details-modal");
 
 function showToast(message, tone = "success") {
   toast.textContent = message;
@@ -137,6 +141,122 @@ function renderPhotoPreview(container, photos, onRemove) {
     item.querySelector("button").addEventListener("click", () => onRemove(index));
     container.append(item);
   });
+}
+
+function formatFlags(flags) {
+  return flags.length ? flags.join(", ") : "нет";
+}
+
+function formatDate(value, emptyText) {
+  return value ? new Date(value).toLocaleString("ru-RU") : emptyText;
+}
+
+function detailRow(label, value) {
+  const row = document.createElement("div");
+  row.className = "details-row";
+
+  const title = document.createElement("strong");
+  title.textContent = label;
+
+  const text = document.createElement("span");
+  text.textContent = value;
+
+  row.append(title, text);
+  return row;
+}
+
+function renderDetailsPhotos(photos) {
+  const section = document.createElement("section");
+  section.className = "details-section";
+
+  const title = document.createElement("h3");
+  title.textContent = "Фотографии";
+  section.append(title);
+
+  if (!photos.length) {
+    const empty = document.createElement("p");
+    empty.className = "details-empty";
+    empty.textContent = "Фотографии не добавлены.";
+    section.append(empty);
+    return section;
+  }
+
+  const gallery = document.createElement("div");
+  gallery.className = "photo-gallery";
+
+  photos.forEach((photo, index) => {
+    const item = document.createElement("a");
+    item.className = "photo-tile";
+    item.href = photo;
+    item.target = "_blank";
+    item.rel = "noreferrer";
+
+    if (photo.startsWith("data:image") || /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(photo)) {
+      const image = document.createElement("img");
+      image.src = photo;
+      image.alt = `Фото ${index + 1}`;
+      item.append(image);
+    } else {
+      item.textContent = `Фото ${index + 1}`;
+    }
+
+    gallery.append(item);
+  });
+
+  section.append(gallery);
+  return section;
+}
+
+function openDetailsModal(title, content) {
+  detailsModalTitle.textContent = title;
+  detailsModalBody.replaceChildren(content);
+  detailsModal.classList.remove("hidden");
+  document.body.classList.add("modal-open");
+  closeDetailsModalButton.focus();
+}
+
+function closeDetailsModal() {
+  detailsModal.classList.add("hidden");
+  document.body.classList.remove("modal-open");
+  detailsModalBody.replaceChildren();
+}
+
+function openProductDetails(product) {
+  const content = document.createElement("div");
+  content.className = "details-grid";
+  content.append(
+    renderDetailsPhotos(product.photos),
+    detailRow("Название", product.name),
+    detailRow("Категория", product.category),
+    detailRow("Готовность", product.cookingState),
+    detailRow("КБЖУ на 100 г", `${product.calories} / ${product.proteins} / ${product.fats} / ${product.carbs}`),
+    detailRow("Флаги", formatFlags(product.flags)),
+    detailRow("Состав", product.composition ?? "не указан"),
+    detailRow("Создан", formatDate(product.createdAt, "не указано")),
+    detailRow("Изменён", formatDate(product.updatedAt, "не изменялся")),
+  );
+
+  openDetailsModal(product.name, content);
+}
+
+function openDishDetails(dish) {
+  const content = document.createElement("div");
+  content.className = "details-grid";
+  const composition = dish.items.map((item) => `${item.product.name} (${item.quantity} г)`).join(", ");
+  content.append(
+    renderDetailsPhotos(dish.photos),
+    detailRow("Название", dish.name),
+    detailRow("Категория", dish.category),
+    detailRow("Порция", `${dish.portionSize} г`),
+    detailRow("КБЖУ на порцию", `${dish.calories} / ${dish.proteins} / ${dish.fats} / ${dish.carbs}`),
+    detailRow("Черновой расчёт", `${dish.nutritionDraft.calories} / ${dish.nutritionDraft.proteins} / ${dish.nutritionDraft.fats} / ${dish.nutritionDraft.carbs}`),
+    detailRow("Флаги", formatFlags(dish.flags)),
+    detailRow("Состав", composition || "не указан"),
+    detailRow("Создано", formatDate(dish.createdAt, "не указано")),
+    detailRow("Изменено", formatDate(dish.updatedAt, "не изменялось")),
+  );
+
+  openDetailsModal(dish.name, content);
 }
 
 function fillMeta() {
@@ -322,16 +442,15 @@ function productCard(product) {
     <div class="meta">Категория: ${product.category}</div>
     <div class="meta">Готовность: ${product.cookingState}</div>
     <div class="meta">КБЖУ: ${product.calories} / ${product.proteins} / ${product.fats} / ${product.carbs}</div>
-    <div class="meta">Флаги: ${product.flags.length ? product.flags.join(", ") : "нет"}</div>
-    <div class="meta">Состав: ${product.composition ?? "не указан"}</div>
     <div class="meta">Фотографий: ${product.photos.length}</div>
-    <div class="meta">Создан: ${new Date(product.createdAt).toLocaleString("ru-RU")}</div>
-    <div class="meta">Изменён: ${product.updatedAt ? new Date(product.updatedAt).toLocaleString("ru-RU") : "не изменялся"}</div>
     <div class="card-actions">
+      <button type="button" class="ghost-button" data-view="${product.id}">Подробнее</button>
       <button type="button" data-edit="${product.id}">Редактировать</button>
       <button type="button" data-delete="${product.id}">Удалить</button>
     </div>
   `;
+
+  card.querySelector("[data-view]").addEventListener("click", () => openProductDetails(product));
 
   card.querySelector("[data-edit]").addEventListener("click", () => {
     productForm.id.value = product.id;
@@ -371,16 +490,15 @@ function dishCard(dish) {
     <div class="meta">Категория: ${dish.category}</div>
     <div class="meta">Порция: ${dish.portionSize} г</div>
     <div class="meta">КБЖУ на порцию: ${dish.calories} / ${dish.proteins} / ${dish.fats} / ${dish.carbs}</div>
-    <div class="meta">Флаги: ${dish.flags.length ? dish.flags.join(", ") : "нет"}</div>
-    <div class="meta">Состав: ${dish.items.map((item) => `${item.product.name} (${item.quantity} г)`).join(", ")}</div>
     <div class="meta">Фотографий: ${dish.photos.length}</div>
-    <div class="meta">Создано: ${new Date(dish.createdAt).toLocaleString("ru-RU")}</div>
-    <div class="meta">Изменено: ${dish.updatedAt ? new Date(dish.updatedAt).toLocaleString("ru-RU") : "не изменялось"}</div>
     <div class="card-actions">
+      <button type="button" class="ghost-button" data-view="${dish.id}">Подробнее</button>
       <button type="button" data-edit="${dish.id}">Редактировать</button>
       <button type="button" data-delete="${dish.id}">Удалить</button>
     </div>
   `;
+
+  card.querySelector("[data-view]").addEventListener("click", () => openDishDetails(dish));
 
   card.querySelector("[data-edit]").addEventListener("click", () => {
     dishForm.id.value = dish.id;
@@ -509,6 +627,13 @@ document.querySelector("#add-dish-item").addEventListener("click", () => {
 
 document.querySelector("#reset-product-form").addEventListener("click", resetProductForm);
 document.querySelector("#reset-dish-form").addEventListener("click", resetDishForm);
+closeDetailsModalButton.addEventListener("click", closeDetailsModal);
+detailsModal.querySelector("[data-close-details]").addEventListener("click", closeDetailsModal);
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !detailsModal.classList.contains("hidden")) {
+    closeDetailsModal();
+  }
+});
 
 ["#product-search", "#product-filter-category", "#product-filter-cooking", "#product-sort", "#product-order"].forEach((selector) => {
   document.querySelector(selector).addEventListener("input", loadProducts);

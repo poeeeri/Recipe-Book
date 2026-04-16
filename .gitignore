@@ -10,11 +10,6 @@ RecipeBook.Api/appsettings.json
 REPORT.md
 DEFENSE.md
 README.md
-
-run-api.ps1
-run-tests.ps1
-run-unit-tests.ps1
-RecipeBook.UnitTests/
 data/
 tests/
 src/

@@ -27,6 +27,10 @@ body {
   background: var(--bg);
 }
 
+body.modal-open {
+  overflow: hidden;
+}
+
 button,
 input,
 select,
@@ -250,6 +254,7 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  width: 128px;
   min-height: 36px;
   padding: 8px 10px;
   border: 1px solid var(--line);
@@ -257,6 +262,18 @@ textarea {
   background: var(--surface-muted);
   color: var(--ink-soft);
   font-size: 0.9rem;
+}
+
+.chips input[type="checkbox"] {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  min-height: 16px;
+  margin: 0;
+}
+
+.chips label span {
+  line-height: 1.25;
 }
 
 .chips label:has(input:checked) {
@@ -393,6 +410,129 @@ button:focus-visible {
   background: #8e2f2f;
 }
 
+.details-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  min-width: 0;
+}
+
+.details-modal.hidden {
+  display: none;
+}
+
+.details-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(23, 26, 22, 0.54);
+  backdrop-filter: blur(3px);
+}
+
+.details-panel {
+  position: relative;
+  z-index: 1;
+  width: min(920px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 24px 70px rgba(23, 26, 22, 0.24);
+}
+
+.details-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.details-header h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.details-body {
+  max-height: calc(100vh - 118px);
+  overflow: auto;
+  padding: 18px;
+}
+
+.details-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.details-section {
+  display: grid;
+  gap: 12px;
+  padding-bottom: 4px;
+}
+
+.details-section h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.details-empty {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.details-row {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-muted);
+}
+
+.details-row strong {
+  color: var(--ink);
+}
+
+.details-row span {
+  color: var(--ink-soft);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.photo-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 180px));
+  gap: 12px;
+}
+
+.photo-tile {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-muted);
+  color: var(--brand-dark);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.photo-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .toast {
   position: fixed;
   right: 20px;
@@ -464,6 +604,19 @@ button:focus-visible {
   .card-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .details-modal {
+    padding: 10px;
+  }
+
+  .details-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .details-row {
+    grid-template-columns: 1fr;
   }
 
   button {

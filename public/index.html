@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Книга рецептов</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/styles.css?v=2" />
   </head>
   <body>
     <div class="page-shell">
@@ -184,6 +184,17 @@
       </main>
     </div>
 
+    <div id="details-modal" class="details-modal hidden" role="dialog" aria-modal="true" aria-labelledby="details-modal-title">
+      <div class="details-backdrop" data-close-details></div>
+      <section class="details-panel">
+        <div class="details-header">
+          <h2 id="details-modal-title"></h2>
+          <button id="close-details-modal" class="ghost-button" type="button">Закрыть</button>
+        </div>
+        <div id="details-modal-body" class="details-body"></div>
+      </section>
+    </div>
+
     <div id="toast" class="toast hidden"></div>
 
     <template id="dish-item-template">
@@ -194,6 +205,6 @@
       </div>
     </template>
 
-    <script type="module" src="/app.js?v=5"></script>
+    <script type="module" src="/app.js?v=7"></script>
   </body>
 </html>
