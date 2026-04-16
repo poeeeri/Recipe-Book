@@ -138,7 +138,7 @@ internal static class TestRunner
     {
         var domain = new RecipeDomainService();
         var result = domain.ApplyDishMacro("Томатный !суп !десерт", null);
-        AssertEqual("Томатный !десерт", result.Name, "macro name");
+        AssertEqual("Томатный", result.Name, "macro name");
         AssertEqual("Суп", result.Category, "macro category");
 
         var explicitResult = domain.ApplyDishMacro("ягодный !десерт", "Напиток");

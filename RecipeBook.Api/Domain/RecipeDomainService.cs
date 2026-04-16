@@ -82,7 +82,11 @@ public sealed class RecipeDomainService
 
         if (matchedMacro is not null)
         {
-            name = string.Concat(name.AsSpan(0, matchedIndex), " ", name.AsSpan(matchedIndex + matchedMacro.Length));
+            foreach (var macro in RecipeConstants.CategoryMacros.Keys)
+            {
+                name = Regex.Replace(name, Regex.Escape(macro), " ", RegexOptions.IgnoreCase);
+            }
+
             name = Regex.Replace(name, "\\s+", " ").Trim();
         }
 
