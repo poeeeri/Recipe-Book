@@ -53,20 +53,50 @@ public sealed class DishCalorieCalculationTests
         Assert.Equal(expectedCalories, result.Calories);
     }
 
-    /// анализ граничных значений:
-    /// 0.01 г, 100 г и крупное допустимое значение
-    /// проверяется корректность формулы на границах
+    /// эквивалентное разбиение:
+    /// разные допустимые количества продукта дают корректный расчет
     [Theory]
     [InlineData(0.01, 0.00)]
     [InlineData(100, 20.00)]
     [InlineData(1000, 200.00)]
-    public void CalculateDishNutrition_HandlesBoundaryQuantities(decimal quantity, decimal expectedCalories)
+    public void CalculateDishNutrition_ReturnsExpectedCalories_ForDifferentValidQuantities(decimal quantity, decimal expectedCalories)
     {
         var result = _domain.CalculateDishNutrition(
             [new DishItem { ProductId = "p-cucumber", Quantity = quantity }],
             _productsById);
 
         Assert.Equal(expectedCalories, result.Calories);
+    }
+
+    /// анализ граничных значений:
+    /// правило для количества ингредиента
+    /// проверяются значения ниже границы и на границе
+    [Theory]
+    [InlineData(-0.01)]
+    [InlineData(0)]
+    public void NormalizeDish_Throws_WhenIngredientQuantityIsNotGreaterThanZero(decimal quantity)
+    {
+        var request = CreateDishRequest(quantity);
+        var products = _productsById.Values.ToList();
+
+        var exception = Assert.Throws<RecipeValidationException>(() =>
+            _domain.NormalizeDish(request, products));
+
+        Assert.Contains("больше 0", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// анализ граничных значений:
+    /// минимальное допустимое значение сразу выше границы количества ингредиента
+    [Fact]
+    public void NormalizeDish_AcceptsMinimumPositiveIngredientQuantity()
+    {
+        var request = CreateDishRequest(0.01m);
+        var products = _productsById.Values.ToList();
+
+        var dish = _domain.NormalizeDish(request, products);
+
+        Assert.Equal(0.01m, dish.Items[0].Quantity);
+        Assert.Equal(0.00m, dish.NutritionDraft.Calories);
     }
 
     /// Негативный сценарий для эквивалентного разбиения:
@@ -79,7 +109,7 @@ public sealed class DishCalorieCalculationTests
                 [new DishItem { ProductId = "missing-product", Quantity = 100 }],
                 _productsById));
 
-        Assert.Contains("Продукт не найден", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Продукт \"missing-product\" не найден", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     public static IEnumerable<object[]> ValidCalorieEquivalenceCases()
@@ -139,4 +169,22 @@ public sealed class DishCalorieCalculationTests
         product.Id = id;
         return product;
     }
+
+    private static DishRequest CreateDishRequest(decimal quantity) =>
+        new()
+        {
+            Name = "Огуречный салат",
+            Photos = [],
+            PortionSize = 100m,
+            Category = RecipeConstants.DishCategories[4],
+            Flags = [],
+            Items =
+            [
+                new DishItemRequest
+                {
+                    ProductId = "p-cucumber",
+                    Quantity = quantity
+                }
+            ]
+        };
 }
