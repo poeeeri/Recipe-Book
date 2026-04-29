@@ -79,7 +79,7 @@ public sealed class DishCalorieCalculationTests
                 [new DishItem { ProductId = "missing-product", Quantity = 100 }],
                 _productsById));
 
-        Assert.Contains("не найден", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Продукт не найден", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     public static IEnumerable<object[]> ValidCalorieEquivalenceCases()
