@@ -342,14 +342,6 @@ function calculateDraft(items) {
   );
 }
 
-function clearManualDishNutrition() {
-  delete dishForm.dataset.manualValues;
-}
-
-function hasManualDishNutrition() {
-  return dishForm.dataset.manualValues === "true";
-}
-
 function availableDishFlags(items) {
   if (!items.length) {
     return [];
@@ -369,12 +361,10 @@ function updateDishDraft() {
   const draft = calculateDraft(items);
   dishDraftText.textContent = `Калории: ${draft.calories.toFixed(2)}, Б: ${draft.proteins.toFixed(2)}, Ж: ${draft.fats.toFixed(2)}, У: ${draft.carbs.toFixed(2)}`;
 
-  if (!hasManualDishNutrition()) {
-    dishForm.calories.value = draft.calories.toFixed(2);
-    dishForm.proteins.value = draft.proteins.toFixed(2);
-    dishForm.fats.value = draft.fats.toFixed(2);
-    dishForm.carbs.value = draft.carbs.toFixed(2);
-  }
+  dishForm.calories.value = draft.calories.toFixed(2);
+  dishForm.proteins.value = draft.proteins.toFixed(2);
+  dishForm.fats.value = draft.fats.toFixed(2);
+  dishForm.carbs.value = draft.carbs.toFixed(2);
 
   const availableFlags = availableDishFlags(items);
   renderCheckboxes(dishFlagsContainer, state.meta.flags, {
@@ -412,7 +402,6 @@ function resetProductForm() {
 function resetDishForm() {
   dishForm.reset();
   dishForm.id.value = "";
-  clearManualDishNutrition();
   state.dishPhotos = [];
   renderPhotoPreview(dishPhotosPreview, state.dishPhotos, (index) => {
     state.dishPhotos.splice(index, 1);
@@ -509,7 +498,6 @@ function dishCard(dish) {
     dishForm.proteins.value = dish.proteins;
     dishForm.fats.value = dish.fats;
     dishForm.carbs.value = dish.carbs;
-    dishForm.dataset.manualValues = "true";
     state.dishPhotos = [...dish.photos];
     renderPhotoPreview(dishPhotosPreview, state.dishPhotos, removeDishPhoto);
     dishItems.innerHTML = "";
@@ -599,12 +587,6 @@ dishForm.addEventListener("submit", async (event) => {
   } catch (error) {
     showToast(error.error ?? "Ошибка сохранения блюда.", "error");
   }
-});
-
-["calories", "proteins", "fats", "carbs"].forEach((name) => {
-  dishForm[name].addEventListener("input", () => {
-    dishForm.dataset.manualValues = "true";
-  });
 });
 
 productPhotosInput.addEventListener("change", async () => {

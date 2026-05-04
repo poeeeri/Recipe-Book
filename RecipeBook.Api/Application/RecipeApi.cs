@@ -22,7 +22,7 @@ public static class RecipeApi
             database.Products.Add(product);
             await store.WriteAsync(database, cancellationToken);
             return Results.Created($"/api/products/{product.Id}", product);
-        });
+        }).AddEndpointFilter(HandleValidationExceptionAsync);
 
         app.MapGet("/api/products/{id}", async (string id, IRecipeStore store, CancellationToken cancellationToken) =>
         {
@@ -45,7 +45,7 @@ public static class RecipeApi
             database.Dishes = database.Dishes.Select(dish => domain.NormalizeDish(ToRequest(dish), database.Products, dish)).ToList();
             await store.WriteAsync(database, cancellationToken);
             return Results.Ok(updatedProduct);
-        });
+        }).AddEndpointFilter(HandleValidationExceptionAsync);
 
         app.MapDelete("/api/products/{id}", async (string id, IRecipeStore store, CancellationToken cancellationToken) =>
         {
@@ -88,7 +88,7 @@ public static class RecipeApi
             database.Dishes.Add(dish);
             await store.WriteAsync(database, cancellationToken);
             return Results.Created($"/api/dishes/{dish.Id}", domain.PresentDish(dish, database.Products));
-        });
+        }).AddEndpointFilter(HandleValidationExceptionAsync);
 
         app.MapGet("/api/dishes/{id}", async (string id, IRecipeStore store, RecipeDomainService domain, CancellationToken cancellationToken) =>
         {
@@ -112,7 +112,7 @@ public static class RecipeApi
             database.Dishes[index] = updatedDish;
             await store.WriteAsync(database, cancellationToken);
             return Results.Ok(domain.PresentDish(updatedDish, database.Products));
-        });
+        }).AddEndpointFilter(HandleValidationExceptionAsync);
 
         app.MapDelete("/api/dishes/{id}", async (string id, IRecipeStore store, CancellationToken cancellationToken) =>
         {
@@ -147,4 +147,16 @@ public static class RecipeApi
                 Quantity = item.Quantity
             })]
         };
+
+    private static async ValueTask<object?> HandleValidationExceptionAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
+    {
+        try
+        {
+            return await next(context);
+        }
+        catch (RecipeValidationException exception)
+        {
+            return Results.BadRequest(new { error = exception.Message });
+        }
+    }
 }
