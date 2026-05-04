@@ -15,10 +15,10 @@ internal sealed class ApiTestHost : IAsyncDisposable
         WriteIndented = true
     };
 
-    private readonly WebApplication _app;
-    private readonly string _workDirectory;
+    private readonly WebApplication? _app;
+    private readonly string? _workDirectory;
 
-    private ApiTestHost(WebApplication app, HttpClient client, string workDirectory)
+    private ApiTestHost(WebApplication? app, HttpClient client, string? workDirectory)
     {
         _app = app;
         Client = client;
@@ -27,15 +27,26 @@ internal sealed class ApiTestHost : IAsyncDisposable
 
     public HttpClient Client { get; }
 
-    public string DatabasePath => Path.Combine(_workDirectory, "db.json");
+    public string DatabasePath => _workDirectory is null
+        ? throw new InvalidOperationException("Внешний API не предоставляет путь к тестовой базе.")
+        : Path.Combine(_workDirectory, "db.json");
 
     /// <summary>
-    /// Глобальная настройка API-тестов: запускает настоящий конвейер ASP.NET Core
-    /// поверх файлового хранилища. Тесты не имитируют маршрутизацию, сериализацию,
-    /// сервисы приложения или сохранение данных.
+    /// Глобальная настройка API-тестов. По умолчанию тест сам запускает настоящий
+    /// ASP.NET Core backend с файловой БД. Если задан RECIPE_BOOK_TEST_BASE_URL,
+    /// тесты обращаются к уже запущенному внешнему backend и не подменяют его слои.
     /// </summary>
     public static async Task<ApiTestHost> StartAsync(DatabaseModel? seed = null)
     {
+        var externalBaseUrl = Environment.GetEnvironmentVariable("RECIPE_BOOK_TEST_BASE_URL");
+        if (!string.IsNullOrWhiteSpace(externalBaseUrl))
+        {
+            return new ApiTestHost(
+                app: null,
+                client: new HttpClient { BaseAddress = new Uri(externalBaseUrl) },
+                workDirectory: null);
+        }
+
         var workDirectory = Path.Combine(Path.GetTempPath(), $"recipe-book-api-tests-{Guid.NewGuid():N}");
         Directory.CreateDirectory(workDirectory);
         var databasePath = Path.Combine(workDirectory, "db.json");
@@ -70,16 +81,20 @@ internal sealed class ApiTestHost : IAsyncDisposable
         await Client.PostAsJsonAsync("/api/dishes", request, JsonOptions);
 
     /// <summary>
-    /// Завершение работы тестового хоста: останавливает Kestrel, освобождает HttpClient
-    /// и удаляет временную файловую базу данных текущего теста.
+    /// Завершение работы тестового хоста. Для локально поднятого backend удаляется
+    /// временная БД; внешний backend не останавливается, потому что он запущен отдельно.
     /// </summary>
     public async ValueTask DisposeAsync()
     {
         Client.Dispose();
-        await _app.StopAsync();
-        await _app.DisposeAsync();
 
-        if (Directory.Exists(_workDirectory))
+        if (_app is not null)
+        {
+            await _app.StopAsync();
+            await _app.DisposeAsync();
+        }
+
+        if (_workDirectory is not null && Directory.Exists(_workDirectory))
         {
             Directory.Delete(_workDirectory, recursive: true);
         }

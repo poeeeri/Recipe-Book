@@ -79,6 +79,12 @@ public static class RecipeBookApp
             app.UseStaticFiles(new StaticFileOptions { FileProvider = provider });
         }
 
+        app.Use(async (context, next) =>
+        {
+            await next();
+            Console.WriteLine($"HTTP {context.Request.Method} {context.Request.Path}{context.Request.QueryString} -> {context.Response.StatusCode}");
+        });
+
         if (usesEntityFramework)
         {
             using var scope = app.Services.CreateScope();
