@@ -75,17 +75,45 @@ public sealed class ProductsApiTests
     }
 
     /// <summary>
-    /// Интеграция API: фильтрация продуктов возвращает только подходящие сохраненные продукты.
+    /// Интеграция API: фильтрация продуктов по категории возвращает подходящий продукт.
     /// </summary>
     [Fact]
-    public async Task GetProducts_ReturnsFilteredProductId()
+    public async Task GetProducts_FiltersByCategory()
     {
         await using var host = await ApiTestHost.StartAsync(TestData.SeededDatabase());
 
-        var response = await host.Client.GetAsync($"/api/products?category={Uri.EscapeDataString(RecipeConstants.ProductCategories[2])}&flags={Uri.EscapeDataString(RecipeConstants.Flags[0])}&sort=calories&order=desc");
+        var response = await host.Client.GetAsync($"/api/products?category={Uri.EscapeDataString(RecipeConstants.ProductCategories[2])}");
         var products = await response.Content.ReadFromJsonAsync<List<Product>>(ApiTestHost.JsonOptions);
 
         Assert.Equal(TestData.TomatoId, products?[0].Id);
+    }
+
+    /// <summary>
+    /// Интеграция API: фильтрация продуктов по флагу возвращает только продукты с этим флагом.
+    /// </summary>
+    [Fact]
+    public async Task GetProducts_FiltersByFlag()
+    {
+        await using var host = await ApiTestHost.StartAsync(TestData.SeededDatabase());
+
+        var response = await host.Client.GetAsync($"/api/products?flags={Uri.EscapeDataString(RecipeConstants.Flags[0])}");
+        var products = await response.Content.ReadFromJsonAsync<List<Product>>(ApiTestHost.JsonOptions);
+
+        Assert.Equal(2, products?.Count);
+    }
+
+    /// <summary>
+    /// Интеграция API: сортировка продуктов по калориям по убыванию возвращает самый калорийный продукт первым.
+    /// </summary>
+    [Fact]
+    public async Task GetProducts_SortsByCaloriesDescending()
+    {
+        await using var host = await ApiTestHost.StartAsync(TestData.SeededDatabase());
+
+        var response = await host.Client.GetAsync("/api/products?sort=calories&order=desc");
+        var products = await response.Content.ReadFromJsonAsync<List<Product>>(ApiTestHost.JsonOptions);
+
+        Assert.Equal(TestData.FlourId, products?[0].Id);
     }
 
     /// <summary>

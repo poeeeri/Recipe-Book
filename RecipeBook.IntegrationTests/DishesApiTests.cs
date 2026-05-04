@@ -110,14 +110,42 @@ public sealed class DishesApiTests
     }
 
     /// <summary>
-    /// Интеграция API: фильтрация блюд возвращает только подходящие сохраненные блюда.
+    /// Интеграция API: поиск блюд по названию возвращает подходящее блюдо.
     /// </summary>
     [Fact]
-    public async Task GetDishes_ReturnsFilteredDishId()
+    public async Task GetDishes_FiltersBySearch()
     {
         await using var host = await ApiTestHost.StartAsync(TestData.SeededDatabase());
 
-        var response = await host.Client.GetAsync($"/api/dishes?search=tofu&category={Uri.EscapeDataString(RecipeConstants.DishCategories[4])}&flags={Uri.EscapeDataString(RecipeConstants.Flags[0])}");
+        var response = await host.Client.GetAsync("/api/dishes?search=tofu");
+        var dishes = await response.Content.ReadFromJsonAsync<List<DishDetails>>(ApiTestHost.JsonOptions);
+
+        Assert.Equal(TestData.SaladId, dishes?[0].Id);
+    }
+
+    /// <summary>
+    /// Интеграция API: фильтрация блюд по категории возвращает подходящее блюдо.
+    /// </summary>
+    [Fact]
+    public async Task GetDishes_FiltersByCategory()
+    {
+        await using var host = await ApiTestHost.StartAsync(TestData.SeededDatabase());
+
+        var response = await host.Client.GetAsync($"/api/dishes?category={Uri.EscapeDataString(RecipeConstants.DishCategories[4])}");
+        var dishes = await response.Content.ReadFromJsonAsync<List<DishDetails>>(ApiTestHost.JsonOptions);
+
+        Assert.Equal(TestData.SaladId, dishes?[0].Id);
+    }
+
+    /// <summary>
+    /// Интеграция API: фильтрация блюд по флагу возвращает подходящее блюдо.
+    /// </summary>
+    [Fact]
+    public async Task GetDishes_FiltersByFlag()
+    {
+        await using var host = await ApiTestHost.StartAsync(TestData.SeededDatabase());
+
+        var response = await host.Client.GetAsync($"/api/dishes?flags={Uri.EscapeDataString(RecipeConstants.Flags[0])}");
         var dishes = await response.Content.ReadFromJsonAsync<List<DishDetails>>(ApiTestHost.JsonOptions);
 
         Assert.Equal(TestData.SaladId, dishes?[0].Id);
