@@ -631,8 +631,9 @@ async function bootstrap() {
   state.meta = await api("/api/meta");
   fillMeta();
   resetProductForm();
+  await loadProducts();
   resetDishForm();
-  await Promise.all([loadProducts(), loadDishes()]);
+  await loadDishes();
 }
 
 bootstrap().catch((error) => {
