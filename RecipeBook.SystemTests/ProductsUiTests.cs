@@ -1,4 +1,5 @@
 using Microsoft.Playwright;
+using RecipeBook.Api.Domain;
 using Xunit;
 
 namespace RecipeBook.SystemTests;
@@ -32,6 +33,7 @@ public sealed class ProductsUiTests
     [InlineData("", false)]
     [InlineData("A", false)]
     [InlineData("AB", true)]
+    [InlineData("ABC", true)]
     public async Task ProductNameInput_ValidatesLengthBoundary(string name, bool expectedValid)
     {
         await using var host = await SystemTestHost.StartAsync();
@@ -63,8 +65,69 @@ public sealed class ProductsUiTests
     }
 
     /// <summary>
+    /// Анализ граничных значений для белков: допустимый диапазон в UI от 0 до 100.
+    /// </summary>
+    [Theory]
+    [InlineData("-0.01", false)]
+    [InlineData("0", true)]
+    [InlineData("0.01", true)]
+    [InlineData("100", true)]
+    [InlineData("100.01", false)]
+    public async Task ProductProteinsInput_ValidatesBoundary(string proteins, bool expectedValid)
+    {
+        await using var host = await SystemTestHost.StartAsync();
+        var page = await host.NewPageAsync();
+
+        await page.Locator("#product-form input[name=proteins]").FillAsync(proteins);
+        var isValid = await page.Locator("#product-form input[name=proteins]").EvaluateAsync<bool>("input => input.checkValidity()");
+
+        Assert.Equal(expectedValid, isValid);
+    }
+
+    /// <summary>
+    /// Анализ граничных значений для жиров: допустимый диапазон в UI от 0 до 100.
+    /// </summary>
+    [Theory]
+    [InlineData("-0.01", false)]
+    [InlineData("0", true)]
+    [InlineData("0.01", true)]
+    [InlineData("100", true)]
+    [InlineData("100.01", false)]
+    public async Task ProductFatsInput_ValidatesBoundary(string fats, bool expectedValid)
+    {
+        await using var host = await SystemTestHost.StartAsync();
+        var page = await host.NewPageAsync();
+
+        await page.Locator("#product-form input[name=fats]").FillAsync(fats);
+        var isValid = await page.Locator("#product-form input[name=fats]").EvaluateAsync<bool>("input => input.checkValidity()");
+
+        Assert.Equal(expectedValid, isValid);
+    }
+
+    /// <summary>
+    /// Анализ граничных значений для углеводов: допустимый диапазон в UI от 0 до 100.
+    /// </summary>
+    [Theory]
+    [InlineData("-0.01", false)]
+    [InlineData("0", true)]
+    [InlineData("0.01", true)]
+    [InlineData("100", true)]
+    [InlineData("100.01", false)]
+    public async Task ProductCarbsInput_ValidatesBoundary(string carbs, bool expectedValid)
+    {
+        await using var host = await SystemTestHost.StartAsync();
+        var page = await host.NewPageAsync();
+
+        await page.Locator("#product-form input[name=carbs]").FillAsync(carbs);
+        var isValid = await page.Locator("#product-form input[name=carbs]").EvaluateAsync<bool>("input => input.checkValidity()");
+
+        Assert.Equal(expectedValid, isValid);
+    }
+
+    /// <summary>
     /// Эквивалентное разбиение для обязательных полей продукта:
-    /// пустое поле не проходит HTML-валидацию.
+    /// невалидный класс "пустое обязательное поле" не проходит HTML-валидацию.
+    /// Валидный класс заполненных обязательных полей проверяется сценарием создания продукта.
     /// </summary>
     [Theory]
     [InlineData("name")]
@@ -80,6 +143,22 @@ public sealed class ProductsUiTests
         var isValid = await page.Locator($"#product-form input[name={inputName}]").EvaluateAsync<bool>("input => input.checkValidity()");
 
         Assert.False(isValid);
+    }
+
+    /// <summary>
+    /// Системный сценарий: фильтрация продуктов по категории оставляет видимыми
+    /// только продукты выбранной категории.
+    /// </summary>
+    [Fact]
+    public async Task ProductCategoryFilter_ShowsProductsFromSelectedCategory()
+    {
+        await using var host = await SystemTestHost.StartAsync(SystemTestData.SeededDatabase());
+        var page = await host.NewPageAsync();
+
+        await page.Locator("#product-filter-category").SelectOptionAsync([RecipeConstants.ProductCategories[2]]);
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        await Assertions.Expect(page.Locator("#product-list .card")).ToHaveCountAsync(1);
     }
 
     private static async Task FillValidProductAsync(IPage page, string name, string calories, string proteins, string fats, string carbs)

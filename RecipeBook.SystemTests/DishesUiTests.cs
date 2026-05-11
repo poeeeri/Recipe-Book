@@ -66,18 +66,38 @@ public sealed class DishesUiTests
     }
 
     /// <summary>
-    /// Эквивалентное разбиение для фильтрации блюд: поиск по названию оставляет
-    /// видимой только подходящую карточку.
+    /// Эквивалентное разбиение для поиска блюд:
+    /// пустой запрос, существующее совпадение, другой регистр и отсутствие совпадений.
     /// </summary>
-    [Fact]
-    public async Task DishSearch_ShowsMatchingDish()
+    [Theory]
+    [InlineData("", 2)]
+    [InlineData("tofu", 1)]
+    [InlineData("missing", 0)]
+    public async Task DishSearch_FiltersByQueryEquivalenceClass(string search, int expectedVisibleCards)
     {
         await using var host = await SystemTestHost.StartAsync(SystemTestData.SeededDatabase());
         var page = await host.NewPageAsync();
 
-        await page.Locator("#dish-search").FillAsync("tofu");
+        await page.Locator("#dish-search").FillAsync(search);
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-        await Assertions.Expect(page.Locator("#dish-list .card").Filter(new LocatorFilterOptions { HasTextString = "Tomato tofu salad" })).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator("#dish-list .card")).ToHaveCountAsync(expectedVisibleCards);
+    }
+
+    /// <summary>
+    /// Системный сценарий: фильтрация блюд по категории оставляет видимыми
+    /// только блюда выбранной категории.
+    /// </summary>
+    [Fact]
+    public async Task DishCategoryFilter_ShowsDishesFromSelectedCategory()
+    {
+        await using var host = await SystemTestHost.StartAsync(SystemTestData.SeededDatabase());
+        var page = await host.NewPageAsync();
+
+        await page.Locator("#dish-filter-category").SelectOptionAsync(new SelectOptionValue { Index = 5 });
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        await Assertions.Expect(page.Locator("#dish-list .card")).ToHaveCountAsync(1);
     }
 
     private static async Task FillDishBaseAsync(IPage page)

@@ -7,6 +7,7 @@ internal static class SystemTestData
     public const string TomatoId = "ui-product-tomato";
     public const string TofuId = "ui-product-tofu";
     public const string SaladId = "ui-dish-salad";
+    public const string TomatoSoupId = "ui-dish-tomato-soup";
 
     public static DatabaseModel SeededDatabase() =>
         new()
@@ -34,33 +35,37 @@ internal static class SystemTestData
             ],
             Dishes =
             [
-                new Dish
-                {
-                    Id = SaladId,
-                    Name = "Tomato tofu salad",
-                    Photos = [],
-                    Calories = 80m,
-                    Proteins = 7m,
-                    Fats = 3.7m,
-                    Carbs = 4m,
-                    PortionSize = 200m,
-                    Category = RecipeConstants.DishCategories[4],
-                    Flags = [RecipeConstants.Flags[0], RecipeConstants.Flags[1]],
-                    AvailableFlags = [RecipeConstants.Flags[0], RecipeConstants.Flags[1]],
-                    NutritionDraft = new NutritionDraft
-                    {
-                        Calories = 80m,
-                        Proteins = 7m,
-                        Fats = 3.7m,
-                        Carbs = 4m
-                    },
-                    Items =
+                Dish(
+                    SaladId,
+                    "Tomato tofu salad",
+                    category: RecipeConstants.DishCategories[4],
+                    calories: 80m,
+                    proteins: 7m,
+                    fats: 3.7m,
+                    carbs: 4m,
+                    portionSize: 200m,
+                    flags: [RecipeConstants.Flags[0], RecipeConstants.Flags[1]],
+                    availableFlags: [RecipeConstants.Flags[0], RecipeConstants.Flags[1]],
+                    items:
                     [
                         new DishItem { ProductId = TomatoId, Quantity = 100m },
                         new DishItem { ProductId = TofuId, Quantity = 50m }
-                    ],
-                    CreatedAt = DateTime.UtcNow
-                }
+                    ]),
+                Dish(
+                    TomatoSoupId,
+                    "Tomato soup",
+                    category: RecipeConstants.DishCategories[5],
+                    calories: 40m,
+                    proteins: 2m,
+                    fats: 0.4m,
+                    carbs: 6m,
+                    portionSize: 200m,
+                    flags: [RecipeConstants.Flags[0], RecipeConstants.Flags[1], RecipeConstants.Flags[2]],
+                    availableFlags: [RecipeConstants.Flags[0], RecipeConstants.Flags[1], RecipeConstants.Flags[2]],
+                    items:
+                    [
+                        new DishItem { ProductId = TomatoId, Quantity = 200m }
+                    ])
             ]
         };
 
@@ -86,6 +91,42 @@ internal static class SystemTestData
             Category = category,
             CookingState = RecipeConstants.ProductCookingStates[0],
             Flags = [.. flags],
+            CreatedAt = DateTime.UtcNow
+        };
+
+    private static Dish Dish(
+        string id,
+        string name,
+        string category,
+        decimal calories,
+        decimal proteins,
+        decimal fats,
+        decimal carbs,
+        decimal portionSize,
+        IReadOnlyCollection<string> flags,
+        IReadOnlyCollection<string> availableFlags,
+        IReadOnlyCollection<DishItem> items) =>
+        new()
+        {
+            Id = id,
+            Name = name,
+            Photos = [],
+            Calories = calories,
+            Proteins = proteins,
+            Fats = fats,
+            Carbs = carbs,
+            PortionSize = portionSize,
+            Category = category,
+            Flags = [.. flags],
+            AvailableFlags = [.. availableFlags],
+            NutritionDraft = new NutritionDraft
+            {
+                Calories = calories,
+                Proteins = proteins,
+                Fats = fats,
+                Carbs = carbs
+            },
+            Items = [.. items],
             CreatedAt = DateTime.UtcNow
         };
 }
