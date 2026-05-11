@@ -85,6 +85,25 @@ public sealed class DishesUiTests
     }
 
     /// <summary>
+    /// Системный сценарий: после выбора состава блюда UI оставляет доступными
+    /// только флаги, которые есть у всех выбранных ингредиентов.
+    /// </summary>
+    [Fact]
+    public async Task DishFlags_DisablesUnavailableFlags_ForSelectedIngredients()
+    {
+        await using var host = await SystemTestHost.StartAsync(SystemTestData.SeededDatabase());
+        var page = await host.NewPageAsync();
+
+        await SelectDishItemAsync(page, rowIndex: 0, productName: "Tomato", quantity: "150");
+        await page.Locator("#add-dish-item").ClickAsync();
+        await SelectDishItemAsync(page, rowIndex: 1, productName: "Tofu", quantity: "100");
+
+        var disabledFlags = await page.Locator("#dish-flags input:disabled").CountAsync();
+
+        Assert.Equal(1, disabledFlags);
+    }
+
+    /// <summary>
     /// Системный сценарий: фильтрация блюд по категории оставляет видимыми
     /// только блюда выбранной категории.
     /// </summary>

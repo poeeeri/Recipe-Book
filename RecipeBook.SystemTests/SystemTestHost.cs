@@ -15,12 +15,12 @@ internal sealed class SystemTestHost : IAsyncDisposable
         WriteIndented = true
     };
 
-    private readonly WebApplication _app;
+    private readonly WebApplication? _app;
     private readonly IPlaywright _playwright;
     private readonly IBrowser _browser;
-    private readonly string _workDirectory;
+    private readonly string? _workDirectory;
 
-    private SystemTestHost(WebApplication app, IPlaywright playwright, IBrowser browser, string workDirectory, string baseUrl)
+    private SystemTestHost(WebApplication? app, IPlaywright playwright, IBrowser browser, string? workDirectory, string baseUrl)
     {
         _app = app;
         _playwright = playwright;
@@ -32,11 +32,30 @@ internal sealed class SystemTestHost : IAsyncDisposable
     public string BaseUrl { get; }
 
     /// <summary>
-    /// Глобальная настройка системных UI-тестов: запускает настоящее приложение,
-    /// создает временную файловую БД и открывает браузер Playwright.
+    /// Глобальная настройка системных UI-тестов. По умолчанию запускает настоящее
+    /// приложение с временной файловой БД. Если задан RECIPE_BOOK_UI_BASE_URL,
+    /// открывает уже запущенное приложение, чтобы можно было показать запросы
+    /// в отдельном терминале backend-а.
     /// </summary>
     public static async Task<SystemTestHost> StartAsync(DatabaseModel? seed = null)
     {
+        var playwright = await Playwright.CreateAsync();
+        var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
+        {
+            Headless = true
+        });
+
+        var externalBaseUrl = Environment.GetEnvironmentVariable("RECIPE_BOOK_UI_BASE_URL");
+        if (!string.IsNullOrWhiteSpace(externalBaseUrl))
+        {
+            return new SystemTestHost(
+                app: null,
+                playwright,
+                browser,
+                workDirectory: null,
+                baseUrl: externalBaseUrl);
+        }
+
         var workDirectory = Path.Combine(Path.GetTempPath(), $"recipe-book-ui-tests-{Guid.NewGuid():N}");
         Directory.CreateDirectory(workDirectory);
         var databasePath = Path.Combine(workDirectory, "db.json");
@@ -51,12 +70,6 @@ internal sealed class SystemTestHost : IAsyncDisposable
         var addresses = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>();
         var baseUrl = addresses?.Addresses.Single() ?? throw new InvalidOperationException("The system test server did not publish an address.");
 
-        var playwright = await Playwright.CreateAsync();
-        var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
-        {
-            Headless = true
-        });
-
         return new SystemTestHost(app, playwright, browser, workDirectory, baseUrl);
     }
 
@@ -69,17 +82,21 @@ internal sealed class SystemTestHost : IAsyncDisposable
     }
 
     /// <summary>
-    /// Завершение системного теста: закрывает браузер, останавливает backend
-    /// и удаляет временную тестовую базу.
+    /// Завершение системного теста: закрывает браузер. Локально поднятый backend
+    /// останавливается и его временная БД удаляется; внешний backend не трогается.
     /// </summary>
     public async ValueTask DisposeAsync()
     {
         await _browser.DisposeAsync();
         _playwright.Dispose();
-        await _app.StopAsync();
-        await _app.DisposeAsync();
 
-        if (Directory.Exists(_workDirectory))
+        if (_app is not null)
+        {
+            await _app.StopAsync();
+            await _app.DisposeAsync();
+        }
+
+        if (_workDirectory is not null && Directory.Exists(_workDirectory))
         {
             Directory.Delete(_workDirectory, recursive: true);
         }
